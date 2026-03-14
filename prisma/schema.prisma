@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  MANAGER
+  CASHIER
+}
+
+enum SaleType {
+  SALE
+  REFUND
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  pinCode       String?    @default("1234")
+  role          UserRole   @default(MANAGER)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  accounts      Account[]
+  products      Product[]
+  sales         Sale[]
+  sessions      Session[]
+  suppliers     Supplier[]
+  cashDrawers   CashDrawer[]
+  expenses      Expense[]
+  stockEntries  StockEntry[]
+}
+
+model CashDrawer {
+  id           String   @id @default(cuid())
+  userId       String
+  startingCash Float    @default(500)
+  date         DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String
+  contact   String?
+  userId    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id                String    @id @default(cuid())
+  barcode           String?
+  name              String
+  salePrice         Float
+  costPrice         Float
+  weightSalePrice   Float?
+  weightCostPrice   Float?
+  canBeSoldByWeight Boolean   @default(false)
+  stock             Float     @default(0)
+  category          String?
+  description       String?
+  image             String?
+  supplierId        String?
+  userId            String?
+  isArchived        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+  sales             Sale[]
+  stockEntries      StockEntry[]
+
+  @@unique([barcode, userId])
+}
+
+model Sale {
+  id           String   @id @default(cuid())
+  productId    String
+  quantity     Float
+  salePrice    Float
+  costPrice    Float
+  totalPrice   Float    @default(0)
+  profit       Float
+  discount     Float    @default(0)
+  type         SaleType @default(SALE)
+  isRefunded   Boolean  @default(false)
+  soldByWeight Boolean  @default(false)
+  parentId     String?
+  userId       String?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  type        String   // Salary, Utility, Rent, Internet, Stock, Daily
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StockEntry {
+  id          String   @id @default(cuid())
+  productId   String
+  quantity    Float    // Number of units or weight added
+  costPrice   Float    // Price per unit at time of entry (snapshot)
+  totalCost   Float    // quantity * costPrice
+  date        DateTime @default(now())
+  userId      String
+  product     Product  @relation(fields: [productId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
