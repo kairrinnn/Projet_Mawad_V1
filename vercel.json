@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "redirects": [
+    { "source": "/test-routing", "destination": "/login", "permanent": false }
+  ]
+}
