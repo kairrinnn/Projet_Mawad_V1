@@ -85,6 +85,9 @@ export default function ScanPage() {
   const isInitializingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [currentBuffer, setCurrentBuffer] = useState("");
+
   useEffect(() => {
     fetchAllProducts();
 
@@ -96,21 +99,25 @@ export default function ScanPage() {
       const diff = now - lastKeyTime;
       lastKeyTime = now;
 
+      // Debug log
+      if (e.key.length === 1 || e.key === "Enter") {
+        setDebugLog(prev => [`Key: ${e.key} | Diff: ${diff}ms`, ...prev].slice(0, 10));
+      }
+
       if (e.key === "Enter") {
         if (buffer.length > 2) {
-          // Bloquer le Enter global si c'est la fin d'un scan pour éviter des actions UI involontaires
           e.preventDefault();
-          fetchProductDetails(buffer.trim());
+          const code = buffer.trim();
+          setDebugLog(prev => [`Final Code: ${code}`, ...prev].slice(0, 10));
+          fetchProductDetails(code);
           buffer = "";
+          setCurrentBuffer("");
         }
       } else if (e.key.length === 1) {
-        // Seuil de 100ms pour regrouper les caractères du scanner
         if (diff > 100) {
             buffer = e.key;
         } else {
             buffer += e.key;
-            // Si c'est ultra-rapide (< 50ms), c'est probablement le pistolet.
-            // On empêche d'écrire dans l'input focus pour ne pas perturber la saisie manuelle.
             if (diff < 50) {
               const activeEl = document.activeElement;
               if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") {
@@ -118,6 +125,7 @@ export default function ScanPage() {
               }
             }
         }
+        setCurrentBuffer(buffer);
       }
     };
 
@@ -603,6 +611,22 @@ export default function ScanPage() {
                   </CardFooter>
               </Card>
           </div>
+        </div>
+      </div>
+
+      {/* Debug Overlay */}
+      <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-[10px] font-mono z-[9999] pointer-events-none max-w-[200px] opacity-80">
+        <div className="font-bold border-b border-white/20 mb-1 pb-1 flex justify-between">
+          <span>SCANNER DEBUG</span>
+          <span className="text-indigo-400">v1.1</span>
+        </div>
+        <div className="text-indigo-300 mb-1">Buffer: {currentBuffer || "Empty"}</div>
+        <div className="space-y-0.5 max-h-[100px] overflow-hidden">
+          {debugLog.map((log, i) => (
+            <div key={i} className={cn(log.startsWith("Final") ? "text-emerald-400 font-bold" : "text-white/60")}>
+              {log}
+            </div>
+          ))}
         </div>
       </div>
     </div>
