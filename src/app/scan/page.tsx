@@ -348,7 +348,12 @@ export default function ScanPage() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50/50 -m-4 sm:-m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 print:p-0 print:bg-white print:m-0">
-      <style dangerouslySetInnerHTML={{ __html: printStyles }} />
+      <style dangerouslySetInnerHTML={{ __html: printStyles + `
+        #qr-reader #qr-shaded-region { border-width: 0 !important; }
+        #qr-reader #qr-shaded-region > div { border-width: 0 !important; }
+        #qr-reader__scan_region { border: none !important; }
+        #qr-reader video { border-radius: 8px; }
+      ` }} />
       <div id="qr-reader-hidden" className="hidden" />
       
       {/* Ticket Invisible */}
