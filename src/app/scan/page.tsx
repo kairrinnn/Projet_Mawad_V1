@@ -85,58 +85,71 @@ export default function ScanPage() {
   const isInitializingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Scanner logic state via refs to avoid closure issues
+  const scannerBuffer = useRef("");
+  const lastKeyTime = useRef(Date.now());
+  
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [currentBuffer, setCurrentBuffer] = useState("");
 
   useEffect(() => {
     fetchAllProducts();
 
-    let buffer = "";
-    let lastKeyTime = Date.now();
-
     const handleKeyDown = (e: KeyboardEvent) => {
       const now = Date.now();
-      const diff = now - lastKeyTime;
-      lastKeyTime = now;
+      const diff = now - lastKeyTime.current;
+      lastKeyTime.current = now;
 
-      // Debug log
-      if (e.key.length === 1 || e.key === "Enter") {
-        setDebugLog(prev => [`Key: ${e.key} | Diff: ${diff}ms`, ...prev].slice(0, 10));
-      }
+      // Alphanumeric keys or Enter
+      const isKey = e.key.length === 1;
+      const isEnter = e.key === "Enter";
 
-      if (e.key === "Enter") {
-        if (buffer.length > 2) {
+      if (!isKey && !isEnter) return;
+
+      // Debugging: track every key
+      setDebugLog(prev => [`Key: ${e.key} | Diff: ${diff}ms`, ...prev].slice(0, 10));
+
+      if (isEnter) {
+        if (scannerBuffer.current.length > 2) {
           e.preventDefault();
-          const code = buffer.trim();
-          setDebugLog(prev => [`Final Code: ${code}`, ...prev].slice(0, 10));
-          fetchProductDetails(code);
-          buffer = "";
+          e.stopPropagation();
+          const finalCode = scannerBuffer.current.trim();
+          setDebugLog(prev => [`Final Code: ${finalCode}`, ...prev].slice(0, 10));
+          fetchProductDetails(finalCode);
+          scannerBuffer.current = "";
           setCurrentBuffer("");
         }
-      } else if (e.key.length === 1) {
+      } else if (isKey) {
+        // Threshold: if > 100ms, start new buffer (human typing is usually slower, but some scanners might be slow)
+        // If it's the very first char of a sequence, we detect it by a large diff
         if (diff > 100) {
-            buffer = e.key;
+          scannerBuffer.current = e.key;
         } else {
-            buffer += e.key;
-            if (diff < 50) {
-              const activeEl = document.activeElement;
-              if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") {
-                e.preventDefault();
-              }
+          scannerBuffer.current += e.key;
+          
+          // If extremely fast (< 50ms), it's definitely a hardware scanner.
+          // In this case, we prevent the character from being typed into an input field (if focused)
+          if (diff < 50) {
+            const activeEl = document.activeElement;
+            if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") {
+              e.preventDefault();
+              e.stopPropagation();
             }
+          }
         }
-        setCurrentBuffer(buffer);
+        setCurrentBuffer(scannerBuffer.current);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    // Use capture phase on document to be sure to get the event
+    document.addEventListener("keydown", handleKeyDown, { capture: true });
     
     // Load shop name from settings
     const savedName = localStorage.getItem("shop_name");
     if (savedName) setShopName(savedName);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown, { capture: true });
       if (html5QrCodeRef.current?.isScanning) {
         html5QrCodeRef.current.stop().catch(console.error);
       }
