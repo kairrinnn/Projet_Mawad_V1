@@ -63,6 +63,7 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<{message: string, details?: string} | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfits, setShowProfits] = useState(false);
   const [pinInput, setPinInput] = useState("");
@@ -79,18 +80,27 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/dashboard", { cache: 'no-store' });
       const json = await res.json();
       if (json.error) {
         console.error("Dashboard API error:", json.error);
+        setError({
+            message: json.error,
+            details: json.details || JSON.stringify(json)
+        });
         setData(null);
       } else {
         setData(json);
         setNewStartingCash(json.cashDrawer.startingCash.toString());
       }
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+    } catch (err: any) {
+      console.error("Failed to fetch dashboard data:", err);
+      setError({
+          message: "Impossible de joindre l'API",
+          details: err.message
+      });
       setData(null);
     } finally {
       setLoading(false);
@@ -210,10 +220,26 @@ export default function DashboardPage() {
   }
 
   if (!data) return (
-    <div className="p-8 text-center">
-        <h2 className="text-xl font-bold text-red-600 mb-2">Erreur de chargement</h2>
-        <p className="text-slate-500 mb-4">L'application n'a pas pu récupérer les données du tableau de bord.</p>
-        <Button onClick={fetchData} variant="outline" size="sm">Réessayer</Button>
+    <div className="p-8 text-center max-w-lg mx-auto bg-white rounded-xl shadow-sm border mt-10">
+        <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-500" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Erreur de chargement</h2>
+        <p className="text-slate-500 mb-6">
+            L'application n'a pas pu récupérer les données du tableau de bord.
+        </p>
+        
+        {error && (
+            <div className="bg-slate-50 p-4 rounded-lg text-left mb-6 font-mono text-xs overflow-auto max-h-[200px] border">
+                <p className="font-bold text-red-600 mb-1">Détails techniques :</p>
+                <p className="text-slate-700 whitespace-pre-wrap">{error.details || error.message}</p>
+            </div>
+        )}
+        
+        <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.location.reload()} variant="outline">Rafraîchir la page</Button>
+            <Button onClick={fetchData} className="bg-indigo-600 hover:bg-indigo-700">Réessayer</Button>
+        </div>
     </div>
   );
 
