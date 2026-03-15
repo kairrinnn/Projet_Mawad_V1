@@ -460,16 +460,16 @@ export default function ScanPage() {
           <div className="lg:col-span-4 space-y-4 flex flex-col">
               <Card className="shadow-sm border-slate-200 shrink-0 overflow-hidden">
                   <div className="bg-black aspect-video relative flex items-center justify-center overflow-hidden">
-                      <div id="qr-reader" className="w-full h-full [&_video]:object-cover" />
+                      <div id="qr-reader" className="w-full h-full [&_video]:object-cover [&_#qr-shaded-region]:!border-none [&_#qr-shaded-region_div]:!border-none" />
                       {/* Overlay Viseur Barcode (Style Unifié) */}
-                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
                           <div className="relative w-[260px] h-[180px]">
                               <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-indigo-500" />
                               <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-indigo-500" />
                               <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-indigo-500" />
                               <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-indigo-500" />
                               
-                              <div className="absolute top-1/2 left-2 right-2 h-[1px] bg-indigo-500/30 animate-pulse" />
+                              <div className="absolute top-1/2 left-2 right-2 h-[1px] bg-indigo-500/50 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
                           </div>
                       </div>
                   </div>
