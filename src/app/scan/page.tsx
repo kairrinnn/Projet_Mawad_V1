@@ -88,9 +88,6 @@ export default function ScanPage() {
   // Scanner logic state via refs to avoid closure issues
   const scannerBuffer = useRef("");
   const lastKeyTime = useRef(Date.now());
-  
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-  const [currentBuffer, setCurrentBuffer] = useState("");
 
   useEffect(() => {
     fetchAllProducts();
@@ -100,35 +97,24 @@ export default function ScanPage() {
       const diff = now - lastKeyTime.current;
       lastKeyTime.current = now;
 
-      // Alphanumeric keys or Enter
       const isKey = e.key.length === 1;
       const isEnter = e.key === "Enter";
 
       if (!isKey && !isEnter) return;
-
-      // Debugging: track every key
-      setDebugLog(prev => [`Key: ${e.key} | Diff: ${diff}ms`, ...prev].slice(0, 10));
 
       if (isEnter) {
         if (scannerBuffer.current.length > 2) {
           e.preventDefault();
           e.stopPropagation();
           const finalCode = scannerBuffer.current.trim();
-          setDebugLog(prev => [`Final Code: ${finalCode}`, ...prev].slice(0, 10));
           fetchProductDetails(finalCode);
           scannerBuffer.current = "";
-          setCurrentBuffer("");
         }
       } else if (isKey) {
-        // Threshold: if > 100ms, start new buffer (human typing is usually slower, but some scanners might be slow)
-        // If it's the very first char of a sequence, we detect it by a large diff
         if (diff > 100) {
           scannerBuffer.current = e.key;
         } else {
           scannerBuffer.current += e.key;
-          
-          // If extremely fast (< 50ms), it's definitely a hardware scanner.
-          // In this case, we prevent the character from being typed into an input field (if focused)
           if (diff < 50) {
             const activeEl = document.activeElement;
             if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") {
@@ -137,7 +123,6 @@ export default function ScanPage() {
             }
           }
         }
-        setCurrentBuffer(scannerBuffer.current);
       }
     };
 
@@ -624,22 +609,6 @@ export default function ScanPage() {
                   </CardFooter>
               </Card>
           </div>
-        </div>
-      </div>
-
-      {/* Debug Overlay */}
-      <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-[10px] font-mono z-[9999] pointer-events-none max-w-[200px] opacity-80">
-        <div className="font-bold border-b border-white/20 mb-1 pb-1 flex justify-between">
-          <span>SCANNER DEBUG</span>
-          <span className="text-indigo-400">v1.1</span>
-        </div>
-        <div className="text-indigo-300 mb-1">Buffer: {currentBuffer || "Empty"}</div>
-        <div className="space-y-0.5 max-h-[100px] overflow-hidden">
-          {debugLog.map((log, i) => (
-            <div key={i} className={cn(log.startsWith("Final") ? "text-emerald-400 font-bold" : "text-white/60")}>
-              {log}
-            </div>
-          ))}
         </div>
       </div>
     </div>
