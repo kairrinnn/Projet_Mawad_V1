@@ -101,11 +101,12 @@ export default function ScanPage() {
 
       if (e.key === "Enter") {
         if (buffer.length > 2) {
-          fetchProductDetails(buffer);
+          fetchProductDetails(buffer.trim());
           buffer = "";
         }
       } else if (e.key.length === 1) {
-        if (diff > 50) {
+        // Si le délai est trop long (>100ms), on considère que c'est une nouvelle saisie
+        if (diff > 100) {
             buffer = e.key;
         } else {
             buffer += e.key;
