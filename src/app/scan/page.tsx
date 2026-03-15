@@ -92,24 +92,31 @@ export default function ScanPage() {
     let lastKeyTime = Date.now();
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") return;
-
       const now = Date.now();
       const diff = now - lastKeyTime;
       lastKeyTime = now;
 
       if (e.key === "Enter") {
         if (buffer.length > 2) {
+          // Bloquer le Enter global si c'est la fin d'un scan pour éviter des actions UI involontaires
+          e.preventDefault();
           fetchProductDetails(buffer.trim());
           buffer = "";
         }
       } else if (e.key.length === 1) {
-        // Si le délai est trop long (>100ms), on considère que c'est une nouvelle saisie
+        // Seuil de 100ms pour regrouper les caractères du scanner
         if (diff > 100) {
             buffer = e.key;
         } else {
             buffer += e.key;
+            // Si c'est ultra-rapide (< 50ms), c'est probablement le pistolet.
+            // On empêche d'écrire dans l'input focus pour ne pas perturber la saisie manuelle.
+            if (diff < 50) {
+              const activeEl = document.activeElement;
+              if (activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA") {
+                e.preventDefault();
+              }
+            }
         }
       }
     };
