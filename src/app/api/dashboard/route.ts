@@ -266,6 +266,12 @@ export async function GET() {
         });
     } catch (error: any) {
         console.error("Dashboard error:", error);
-        return NextResponse.json({ error: "Failed to fetch dashboard data", details: error.message }, { status: 500 });
+        return NextResponse.json({ 
+            error: "Failed to fetch dashboard data", 
+            details: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+        }, { status: 500 });
     }
 }

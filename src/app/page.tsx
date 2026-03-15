@@ -209,7 +209,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (!data) return <div>Erreur de chargement.</div>;
+  if (!data) return (
+    <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-600 mb-2">Erreur de chargement</h2>
+        <p className="text-slate-500 mb-4">L'application n'a pas pu récupérer les données du tableau de bord.</p>
+        <Button onClick={fetchData} variant="outline" size="sm">Réessayer</Button>
+    </div>
+  );
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR', { 
